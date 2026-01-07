@@ -4,83 +4,79 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   build-deploy-test:
     runs-on: ubuntu-latest
 
     steps:
-      # -------------------------
-      # 1. Checkout repository
-      # -------------------------
-      - name: Checkout code
+      # 1. Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # -------------------------
-      # 2. Set up Docker
-      # -------------------------
+      # 2. Install Docker (already exists, but ensures cli)
       - name: Set up Docker
         uses: docker/setup-buildx-action@v3
 
-      # -------------------------
-      # 3. Build Docker image
-      # -------------------------
+      # 3. Install kubectl
+      - name: Install kubectl
+        run: |
+          curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+
+      # 4. Install KIND
+      - name: Install kind
+        run: |
+          curl -Lo kind https://kind.sigs.k8s.io/dl/v0.22.0/kind-linux-amd64
+          chmod +x kind
+          sudo mv kind /usr/local/bin/
+
+      # 5. Create Kubernetes cluster
+      - name: Create kind cluster
+        run: |
+          kind create cluster --name ci
+          kubectl cluster-info
+          kubectl get nodes
+
+      # 6. Build Docker image
       - name: Build Docker image
         run: |
           docker build -t rick-morty-service:2.0 -f src/Dockerfile .
 
-      # -------------------------
-      # 4. Create Kubernetes cluster (kind)
-      # -------------------------
-      - name: Create kind cluster
-        uses: helm/kind-action@v1.10.0
-
-      # -------------------------
-      # 5. Load image into cluster
-      # -------------------------
+      # 7. Load image into kind
       - name: Load Docker image into kind
         run: |
-          kind load docker-image rick-morty-service:2.0
+          kind load docker-image rick-morty-service:2.0 --name ci
 
-      # -------------------------
-      # 6. Install Helm
-      # -------------------------
+      # 8. Install Helm
       - name: Install Helm
-        uses: azure/setup-helm@v4
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          helm version
 
-      # -------------------------
-      # 7. Deploy application with Helm
-      # -------------------------
+      # 9. Deploy with Helm
       - name: Deploy Rick & Morty with Helm
         run: |
           helm install rick-morty ./helm/rick-morty
 
-      # -------------------------
-      # 8. Wait for pod to be ready
-      # -------------------------
+      # 10. Wait for pod to be ready
       - name: Wait for application
         run: |
-          kubectl rollout status deployment/rick-morty
+          kubectl rollout status deployment/rick-morty --timeout=120s
 
-      # -------------------------
-      # 9. Port-forward service
-      # -------------------------
+      # 11. Port forward service
       - name: Port forward service
         run: |
-          kubectl port-forward svc/rick-morty 8000:80 &
+          kubectl port-forward service/rick-morty 8000:80 &
           sleep 10
 
-      # -------------------------
-      # 10. Test healthcheck endpoint
-      # -------------------------
+      # 12. Test health endpoint
       - name: Test health endpoint
         run: |
           curl -f http://localhost:8000/health
 
-      # -------------------------
-      # 11. Test characters endpoint
-      # -------------------------
+      # 13. Test characters endpoint
       - name: Test characters endpoint
         run: |
           curl -f http://localhost:8000/characters
