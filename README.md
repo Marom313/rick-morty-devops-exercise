@@ -53,3 +53,27 @@ All Kubernetes manifests are located under the `yamls/` directory:
 ### Apply Manifests
 ```bash
 kubectl apply -f yamls/
+
+
+## Helm Deployment
+
+This project also provides a Helm chart for Kubernetes deployment.
+
+### Chart Location
+
+
+## CI / GitHub Actions
+
+This repository includes a GitHub Actions workflow that:
+
+- Builds the Docker image
+- Creates a local Kubernetes cluster using kind
+- Deploys the application using Helm
+- Verifies the application by calling REST API endpoints
+
+The workflow runs automatically on every push to the `main` branch.
+
+Workflow file:
+.github/workflows/ci.yaml
+
+

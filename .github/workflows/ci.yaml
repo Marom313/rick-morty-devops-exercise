@@ -1,0 +1,86 @@
+name: CI - Rick & Morty DevOps Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-deploy-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # -------------------------
+      # 1. Checkout repository
+      # -------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # -------------------------
+      # 2. Set up Docker
+      # -------------------------
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+
+      # -------------------------
+      # 3. Build Docker image
+      # -------------------------
+      - name: Build Docker image
+        run: |
+          docker build -t rick-morty-service:2.0 -f src/Dockerfile .
+
+      # -------------------------
+      # 4. Create Kubernetes cluster (kind)
+      # -------------------------
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.10.0
+
+      # -------------------------
+      # 5. Load image into cluster
+      # -------------------------
+      - name: Load Docker image into kind
+        run: |
+          kind load docker-image rick-morty-service:2.0
+
+      # -------------------------
+      # 6. Install Helm
+      # -------------------------
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      # -------------------------
+      # 7. Deploy application with Helm
+      # -------------------------
+      - name: Deploy Rick & Morty with Helm
+        run: |
+          helm install rick-morty ./helm/rick-morty
+
+      # -------------------------
+      # 8. Wait for pod to be ready
+      # -------------------------
+      - name: Wait for application
+        run: |
+          kubectl rollout status deployment/rick-morty
+
+      # -------------------------
+      # 9. Port-forward service
+      # -------------------------
+      - name: Port forward service
+        run: |
+          kubectl port-forward svc/rick-morty 8000:80 &
+          sleep 10
+
+      # -------------------------
+      # 10. Test healthcheck endpoint
+      # -------------------------
+      - name: Test health endpoint
+        run: |
+          curl -f http://localhost:8000/health
+
+      # -------------------------
+      # 11. Test characters endpoint
+      # -------------------------
+      - name: Test characters endpoint
+        run: |
+          curl -f http://localhost:8000/characters
