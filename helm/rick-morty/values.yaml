@@ -2,19 +2,40 @@ replicaCount: 1
 
 image:
   repository: rick-morty-service
-  tag: "2.0"
   pullPolicy: IfNotPresent
+  tag: "2.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
 
 service:
   type: ClusterIP
-  port: 80
+  port: 8000
 
 containerPort: 8000
 
-ingress:
-  enabled: true
-  hosts:
-    - host: rick-morty.local
-      paths:
-        - path: /
-          pathType: Prefix
+resources: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
