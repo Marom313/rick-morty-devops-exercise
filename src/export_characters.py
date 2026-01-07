@@ -23,11 +23,14 @@ def fetch_all_characters():
 
 
 def is_valid_character(character):
+    origin_name = character.get("origin", {}).get("name", "")
+
     return (
         character.get("species") == "Human"
         and character.get("status") == "Alive"
-        and character.get("origin", {}).get("name") == "Earth"
+        and "Earth" in origin_name
     )
+
 
 
 def write_csv(characters):
