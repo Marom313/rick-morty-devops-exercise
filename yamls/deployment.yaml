@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rick-morty-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rick-morty-service
+  template:
+    metadata:
+      labels:
+        app: rick-morty-service
+    spec:
+      containers:
+        - name: rick-morty-service
+          image: rick-morty-service:2.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000

@@ -28,6 +28,28 @@ values such as `Earth (C-137)`, `Earth (Replacement Dimension)`, etc.
 ---
 
 ## REST API
+Note:
+When deployed on Kubernetes, the REST API is exposed via an Ingress resource.
+Requests are routed based on the hostname defined in the Ingress configuration
+(e.g. `rick-morty.local`), which allows clean HTTP access without exposing
+NodePorts or direct Pod IPs.
+
 
 ### Healthcheck
 **Endpoint**
+
+
+## Kubernetes Deployment
+
+The application can be deployed to a local Kubernetes cluster
+(e.g. minikube or microk8s) using standard Kubernetes manifests.
+
+### Manifests
+All Kubernetes manifests are located under the `yamls/` directory:
+- `deployment.yaml` – Application deployment
+- `service.yaml` – Internal service exposure
+- `ingress.yaml` – HTTP routing via Ingress
+
+### Apply Manifests
+```bash
+kubectl apply -f yamls/
